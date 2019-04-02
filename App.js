@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Platform, Text, View, StyleSheet } from 'react-native';
-import { Constants, Location, Permissions } from 'expo';
+import { Constants, Location, Permissions, MapView, PROVIDER_GOOGLE } from 'expo';
 
 export default class App extends Component {
   state = {
@@ -36,17 +36,35 @@ export default class App extends Component {
   render() {
     let text = 'Waiting..';
     let addr = ""
+    let loc = null
     if (this.state.errorMessage) {
       text = this.state.errorMessage;
     } else if (this.state.location) {
       text = JSON.stringify(this.state.location);
       addr = JSON.stringify(this.state.address)
+      loc = this.state.location.coords
     }
 
     return (
       <View style={styles.container}>
-        <Text style={styles.paragraph}>{text}</Text>
-        <Text style={styles.paragraph}>{addr}</Text>
+        {/* <Text style={styles.paragraph}>{text}</Text> */}
+        {
+          this.state.location &&
+          <MapView
+          provider={PROVIDER_GOOGLE}
+            customMapStyle={require("./map-style.json")}
+            style={{ flex: 1, height: "125%" }}
+            initialRegion={{
+              latitude: this.state.location.coords.latitude,
+              longitude: this.state.location.coords.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }}
+          // showsUserLocation={true}
+          >
+          <MapView.Marker coordinate={loc}/>
+          </MapView>
+        }
 
       </View>
     );
@@ -55,10 +73,11 @@ export default class App extends Component {
 
 const styles = StyleSheet.create({
   container: {
+
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: Constants.statusBarHeight,
+    // alignItems: 'center',
+    // justifyContent: 'center',
+    // paddingTop: Constants.statusBarHeight,
     backgroundColor: '#ecf0f1',
   },
   paragraph: {

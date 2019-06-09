@@ -17,17 +17,33 @@ export default class App extends Component {
         lastNoti: null
     };
 
-    componentWillMount() {
-        // if (Platform.OS === 'android' && !Constants.isDevice) {
-        //   this.setState({
-        //     errorMessage: 'Oops, this will not work on Sketch in an Android emulator. Try it on your device!',
-        //   });
-        // } else {
-        // }
+    //Life cycle functions
+
+    async componentWillMount() {
+        await this._setUpNotifications();
         this._getLocationAsync();
     }
 
-    _getLocationAsync = async () => {
+    componentDidUpdate() {
+        //if we have a notification and the map is loaded
+        if (this.state.notification && this.map) {
+            
+            var { latitude, longitude } = this.state.notification
+            var region = {
+                latitude,
+                longitude,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+            }
+            //animating to region
+            this.map.animateToRegion(region, 2000)
+            this.setState({ lastNoti: this.state.notification, notification: null, friends: [] })
+
+        }
+    }
+
+    //Getting permission and setting listener for notifications
+    _setUpNotifications = async () => {
         let { status } = await Permissions.askAsync(Permissions.LOCATION);
         if (status !== "granted") {
             this.setState({
@@ -49,17 +65,10 @@ export default class App extends Component {
             return;
         }
 
-        let location = await Location.getCurrentPositionAsync({
-            enableHighAccuracy: true
-        });
-
-        const { latitude, longitude } = location.coords;
-
         this._notificationSubscription = Notifications.addListener(
             this._handleNotification
         );
-        this.setState({ location });
-    };
+    }
 
     _handleNotification = async notification => {
         const msg = notification.data;
@@ -68,8 +77,17 @@ export default class App extends Component {
 
     };
 
+    _getLocationAsync = async () => {
+        let location = await Location.getCurrentPositionAsync({
+            enableHighAccuracy: true
+        })
+
+        this.setState({ location });
+    };
+
+    //helpers
+
     reset = () => {
-        console.log("reset")
         Keyboard.dismiss()
         this.setState({ reset: true })
     }
@@ -81,23 +99,6 @@ export default class App extends Component {
     newFriends = (friends) => {
         this.setState({ friends })
     }
-
-    componentDidUpdate() {
-        if (this.state.notification) {
-            
-            var { latitude, longitude } = this.state.notification
-            var region = {
-                latitude,
-                longitude,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
-            }
-            this.map.animateToRegion(region, 2000)
-            this.setState({ lastNoti: this.state.notification, notification: null, friends: [] })
-
-        }
-    }
-
 
     render() {
         var friendMarkers = []
